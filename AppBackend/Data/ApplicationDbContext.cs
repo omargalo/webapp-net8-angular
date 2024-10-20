@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using AppBackend.Models;
 
 namespace AppBackend.Data
 {
@@ -9,8 +10,8 @@ namespace AppBackend.Data
         {
         }
 
-        // Define tus DbSets aquí
-        // public DbSet<YourEntity> YourEntities { get; set; }
+        // Definición de DbSets
+        public DbSet<User> Users { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
