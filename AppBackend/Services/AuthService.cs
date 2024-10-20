@@ -5,10 +5,12 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System;
 using System.IdentityModel.Tokens.Jwt;
+using System.Linq;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
-using BCrypt.Net;
+using BCryptNet = BCrypt.Net.BCrypt;
+
 
 
 namespace AppBackend.Services
@@ -16,37 +18,49 @@ namespace AppBackend.Services
     public interface IAuthService
     {
         Task<string> Authenticate(string username, string password);
-        Task<bool> Register(string username, string password, string role); // Añadido método Register
+        Task<bool> Register(string username, string password, string role);
     }
 
     public class AuthService : IAuthService
     {
         private readonly ApplicationDbContext _context;
         private readonly string _jwtSecret;
+        private ApplicationDbContext context;
+        private string jwtSecretKey;
 
-        public AuthService(ApplicationDbContext context, IConfiguration configuration)
+        public AuthService(ApplicationDbContext context, string jwtSecret)
         {
             _context = context;
-            _jwtSecret = configuration["JWT_SECRET_KEY"];
+            _jwtSecret = jwtSecret ?? throw new ArgumentNullException(nameof(jwtSecret));
         }
 
         public async Task<string> Authenticate(string username, string password)
         {
-            // Validar el usuario
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == username);
+            // Validate the user
+            var user = await _context.Users
+                .Include(u => u.UserRoles)
+                .ThenInclude(ur => ur.Role) // Include related roles
+                .FirstOrDefaultAsync(u => u.Username == username);
+
             if (user == null || !VerifyPassword(password, user.PasswordHash))
                 return null;
 
-            // Generar el token JWT
+            // Extract the role (for simplicity assuming one role per user)
+            var userRole = user.UserRoles.FirstOrDefault()?.Role?.Name;
+
+            if (userRole == null)
+                return null;
+
+            // Generate the JWT token
             var tokenHandler = new JwtSecurityTokenHandler();
             var key = Encoding.UTF8.GetBytes(_jwtSecret);
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = new ClaimsIdentity(new[]
                 {
-                    new Claim(ClaimTypes.Name, user.Username),
-                    new Claim(ClaimTypes.Role, user.Role)
-                }),
+            new Claim(ClaimTypes.Name, user.Username),
+            new Claim(ClaimTypes.Role, userRole)
+        }),
                 Expires = DateTime.UtcNow.AddHours(2),
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
             };
@@ -54,37 +68,54 @@ namespace AppBackend.Services
             return tokenHandler.WriteToken(token);
         }
 
-        public async Task<bool> Register(string username, string password, string role)
+
+        public async Task<bool> Register(string username, string password, string roleName)
         {
-            // Verificar si el usuario ya existe
+            // Check if the user already exists
             if (await _context.Users.AnyAsync(u => u.Username == username))
             {
-                // El usuario ya existe
                 return false;
             }
 
-            // Hashear la contraseña
-            //var hashedPassword = BCrypt.HashPassword(password);
-            var hashedPassword = BCrypt.HashPassword(password);
+            // Hash the password
+            var hashedPassword = BCryptNet.HashPassword(password);
 
-            // Crear el nuevo usuario
+            // Create the new user
             var user = new User
             {
                 Username = username,
                 PasswordHash = hashedPassword,
-                Role = role
+                Status = true // Active user
             };
 
-            // Agregar y guardar el usuario en la base de datos
+            // Find the role by its name
+            var role = await _context.CatRoles.FirstOrDefaultAsync(r => r.Name == roleName);
+
+            if (role == null)
+            {
+                return false; // Invalid role
+            }
+
+            // Create the UserRole relationship
+            var userRole = new UserRole
+            {
+                User = user,
+                Role = role,
+                Status = true // Active role assignment
+            };
+
+            // Save the new user and the UserRole assignment
             _context.Users.Add(user);
+            _context.UserRoles.Add(userRole);
             await _context.SaveChangesAsync();
+
             return true;
         }
 
         private bool VerifyPassword(string password, string storedHash)
         {
             // Verificar la contraseña utilizando BCrypt
-            return BCrypt.Verify(password, storedHash);
+            return BCryptNet.Verify(password, storedHash);
         }
     }
 }

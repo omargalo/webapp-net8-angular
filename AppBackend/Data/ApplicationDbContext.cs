@@ -10,14 +10,18 @@ namespace AppBackend.Data
         {
         }
 
-        // Definición de DbSets
+        // Define DbSets for your tables
         public DbSet<User> Users { get; set; }
+        public DbSet<UserRole> UserRoles { get; set; }  // Add UserRoles DbSet
+        public DbSet<CatRole> CatRoles { get; set; }    // Add CatRoles DbSet
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
-            // Configuraciones adicionales si es necesario
+            // Optional: Additional configurations
+            modelBuilder.Entity<UserRole>()
+                .HasKey(ur => new { ur.UserId, ur.RoleId }); // Composite Key for UserRole
         }
     }
 }

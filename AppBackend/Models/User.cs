@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 
 namespace AppBackend.Models
@@ -15,8 +16,11 @@ namespace AppBackend.Models
         [Required]
         public string? PasswordHash { get; set; }
 
-        [Required]
-        public string? Role { get; set; }
+        // Logical deletion flag
+        public bool Status { get; set; } = true;
+
+        // Navigation property for user roles
+        public ICollection<UserRole>? UserRoles { get; set; }
 
     }
 }

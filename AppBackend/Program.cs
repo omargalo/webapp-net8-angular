@@ -22,6 +22,11 @@ string? dbUser = Environment.GetEnvironmentVariable("AZOGASQL_USER");
 string? dbPassword = Environment.GetEnvironmentVariable("AZOGASQL_PASSWORD");
 string? jwtSecretKey = Environment.GetEnvironmentVariable("JWT_SECRET_KEY");
 
+if (string.IsNullOrEmpty(jwtSecretKey))
+{
+    throw new InvalidOperationException("JWT_SECRET_KEY is not configured");
+}
+
 // Construir la cadena de conexión
 string connectionString = $"Server=tcp:{dbHost},1433;Initial Catalog={dbName};Persist Security Info=False;User ID={dbUser};Password={dbPassword};MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;";
 
@@ -60,10 +65,45 @@ builder.Services.AddAuthorization(options =>
 
 // Add services to the container.
 builder.Services.AddControllers();
-builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IAuthService, AuthService>(provider =>
+{
+    var context = provider.GetRequiredService<ApplicationDbContext>();
+    return new AuthService(context, jwtSecretKey);
+});
+
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo { Title = "GAHT API", Version = "v1" });
+
+    // Add JWT Authentication scheme
+    c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
+        Scheme = "Bearer",
+        BearerFormat = "JWT",
+        In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+        Description = "Enter 'Bearer' followed by your token in the text input below.\nExample: 'Bearer 12345abcdef'",
+    });
+
+    // Add a global security requirement
+    c.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+    {
+        {
+            new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+            {
+                Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                {
+                    Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            new string[] {}
+        }
+    });
+});
 
 var app = builder.Build();
 
@@ -71,7 +111,10 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "GAHT API V1");
+    });
 }
 
 app.UseHttpsRedirection();
