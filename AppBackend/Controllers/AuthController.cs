@@ -1,4 +1,4 @@
-﻿using AppBackend.Services;
+﻿using AppBackend.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
@@ -32,6 +32,24 @@ namespace AppBackend.Controllers
 
             [Required(ErrorMessage = "Role is required")]
             public string? Role { get; set; }
+
+            // New fields
+            [Required(ErrorMessage = "Name is required")]
+            public string? Name { get; set; }
+
+            [Required(ErrorMessage = "Last name is required")]
+            public string? LastName { get; set; }
+
+            [Required(ErrorMessage = "Mother's maiden name is required")]
+            public string? MothersMaidenName { get; set; }
+
+            [Required(ErrorMessage = "Email is required")]
+            [EmailAddress]
+            public string? Email { get; set; }
+
+            [Required(ErrorMessage = "Cell phone is required")]
+            [Phone]
+            public string? CellPhone { get; set; }
         }
 
         public AuthController(IAuthService authService)
@@ -64,7 +82,17 @@ namespace AppBackend.Controllers
                 return BadRequest(ModelState);
             }
 
-            var result = await _authService.Register(request.Username, request.Password, request.Role);
+            // Pass all the fields to the AuthService's Register method
+            var result = await _authService.Register(
+                request.Username,
+                request.Password,
+                request.Role,
+                request.Name,
+                request.LastName,
+                request.MothersMaidenName,
+                request.Email,
+                request.CellPhone);
+
             if (!result)
                 return BadRequest(new { message = "Registration failed. Username might already exist." });
 

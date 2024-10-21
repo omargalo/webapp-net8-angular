@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
-
 namespace AppBackend.Models
 {
     public class User
@@ -14,6 +13,27 @@ namespace AppBackend.Models
         public string? Username { get; set; }
 
         [Required]
+        [MaxLength(100)]
+        public string? Name { get; set; }
+
+        [Required]
+        [MaxLength(100)]
+        public string? LastName { get; set; }
+
+        [Required]
+        [MaxLength(100)]
+        public string? MothersMaidenName { get; set; }
+
+        [Required]
+        [EmailAddress]
+        [MaxLength(200)]
+        public string? Email { get; set; }
+
+        [Required]
+        [Phone]
+        public string? CellPhone { get; set; }
+
+        [Required]
         public string? PasswordHash { get; set; }
 
         // Logical deletion flag
@@ -21,6 +41,5 @@ namespace AppBackend.Models
 
         // Navigation property for user roles
         public ICollection<UserRole>? UserRoles { get; set; }
-
     }
 }

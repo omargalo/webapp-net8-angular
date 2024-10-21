@@ -1,4 +1,6 @@
 using AppBackend.Data;
+using AppBackend.Interfaces;
+using AppBackend.Services;
 using Microsoft.EntityFrameworkCore;
 using DotNetEnv;
 using Microsoft.AspNetCore.Builder;
@@ -8,7 +10,6 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using System;
-using AppBackend.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 

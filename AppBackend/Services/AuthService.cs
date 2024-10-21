@@ -1,5 +1,6 @@
 ﻿using AppBackend.Data;
 using AppBackend.Models;
+using AppBackend.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
@@ -12,15 +13,8 @@ using System.Threading.Tasks;
 using BCryptNet = BCrypt.Net.BCrypt;
 
 
-
 namespace AppBackend.Services
 {
-    public interface IAuthService
-    {
-        Task<string> Authenticate(string username, string password);
-        Task<bool> Register(string username, string password, string role);
-    }
-
     public class AuthService : IAuthService
     {
         private readonly ApplicationDbContext _context;
@@ -68,8 +62,10 @@ namespace AppBackend.Services
             return tokenHandler.WriteToken(token);
         }
 
-
-        public async Task<bool> Register(string username, string password, string roleName)
+        public async Task<bool> Register(
+            string username, string password, string roleName,
+            string name, string lastName, string mothersMaidenName,
+            string email, string cellPhone)
         {
             // Check if the user already exists
             if (await _context.Users.AnyAsync(u => u.Username == username))
@@ -80,11 +76,16 @@ namespace AppBackend.Services
             // Hash the password
             var hashedPassword = BCryptNet.HashPassword(password);
 
-            // Create the new user
+            // Create the new user with the additional fields
             var user = new User
             {
                 Username = username,
                 PasswordHash = hashedPassword,
+                Name = name,
+                LastName = lastName,
+                MothersMaidenName = mothersMaidenName,
+                Email = email,
+                CellPhone = cellPhone,
                 Status = true // Active user
             };
 
@@ -110,6 +111,11 @@ namespace AppBackend.Services
             await _context.SaveChangesAsync();
 
             return true;
+        }
+
+        public Task<bool> Register(string username, string password, string role)
+        {
+            throw new NotImplementedException();
         }
 
         private bool VerifyPassword(string password, string storedHash)
