@@ -117,21 +117,6 @@ if (app.Environment.IsDevelopment())
     {
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "GAHT API V1");
     });
-
-    // Launch the browser to Swagger UI
-    try
-    {
-        var url = "http://localhost:5142/swagger/index.html";
-        Process.Start(new ProcessStartInfo
-        {
-            FileName = url,
-            UseShellExecute = true
-        });
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"Failed to open browser: {ex.Message}");
-    }
 }
 
 app.UseHttpsRedirection();
