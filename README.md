@@ -1,7 +1,7 @@
 
 # WebApp Base .NET 8 + Angular 19
 
-This repository serves as a starter template for building modern, full-stack web applications using **.NET 8** as the backend and **Angular 18** for the frontend. The project is designed to integrate seamlessly, enabling developers to focus on building features rather than configuring environments.
+This repository serves as a starter template for building modern, full-stack web applications using **.NET 8** as the backend and **Angular 19** for the frontend. The project is designed to integrate seamlessly, enabling developers to focus on building features rather than configuring environments.
 
 ## Features
 - **Backend**: Powered by .NET 8 with RESTful APIs, JWT authentication, and a scalable architecture.
