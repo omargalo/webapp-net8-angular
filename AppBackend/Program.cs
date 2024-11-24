@@ -48,7 +48,7 @@ string dbPassword = GetRequiredConfig("GAHT_SQL_PASSWORD");
 string jwtSecretKey = GetRequiredConfig("GAHT_JWT_SECRET_KEY");
 
 // Connection string
-string connectionString = $"Server=tcp:{dbHost},1433;Initial Catalog={dbName};Persist Security Info=False;User ID={dbUser};Password={dbPassword};MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;";
+string connectionString = $"Server=tcp:{dbHost},1433;Initial Catalog={dbName};Persist Security Info=False;User ID={dbUser};Password={dbPassword};MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=True;Connection Timeout=30;";
 logger.LogInformation("Database connection string created.");
 
 // Add services
