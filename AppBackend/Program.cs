@@ -4,41 +4,60 @@ using AppBackend.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.Extensions.Logging;
 using System;
-using System.Diagnostics;
 using System.Text;
 
-// Create the builder
 var builder = WebApplication.CreateBuilder(args);
 
-// Configure appsettings.json and environment vthis ariables
-builder.Configuration
-    .SetBasePath(AppContext.BaseDirectory)
-    .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
-    .AddEnvironmentVariables();
+// Add enhanced logging providers
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
+builder.Logging.AddDebug();
 
-// Access configuration variables using the Configuration API
-string dbHost = builder.Configuration["GAHT_SQL_HOST"] ?? throw new InvalidOperationException("GAHT_SQL_HOST is not configured");
-string dbName = builder.Configuration["GAHT_SQL_DB"] ?? throw new InvalidOperationException("GAHT_SQL_DB is not configured");
-string dbUser = builder.Configuration["GAHT_SQL_USER"] ?? throw new InvalidOperationException("GAHT_SQL_USER is not configured");
-string dbPassword = builder.Configuration["GAHT_SQL_PASSWORD"] ?? throw new InvalidOperationException("GAHT_SQL_PASSWORD is not configured");
-string jwtSecretKey = builder.Configuration["GAHT_JWT_SECRET_KEY"] ?? throw new InvalidOperationException("GAHT_JWT_SECRET_KEY is not configured");
+// Build logger explicitly if needed
+var loggerFactory = LoggerFactory.Create(logging =>
+{
+    logging.AddConsole();
+    logging.AddDebug();
+});
+var logger = loggerFactory.CreateLogger<Program>();
+logger.LogInformation("Application starting...");
 
-// Build the connection string
+// Configuration validation with logging
+string GetRequiredConfig(string key)
+{
+    string? value = builder.Configuration[key];
+    if (value is null)
+    {
+        logger.LogCritical("{Key} is not configured. Application cannot start.", key);
+        throw new InvalidOperationException($"{key} is not configured");
+    }
+    logger.LogInformation("{Key} successfully loaded.", key);
+    return value;
+}
+
+// Configuration
+string dbHost = GetRequiredConfig("GAHT_SQL_HOST");
+string dbName = GetRequiredConfig("GAHT_SQL_DB");
+string dbUser = GetRequiredConfig("GAHT_SQL_USER");
+string dbPassword = GetRequiredConfig("GAHT_SQL_PASSWORD");
+string jwtSecretKey = GetRequiredConfig("GAHT_JWT_SECRET_KEY");
+
+// Connection string
 string connectionString = $"Server=tcp:{dbHost},1433;Initial Catalog={dbName};Persist Security Info=False;User ID={dbUser};Password={dbPassword};MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;";
+logger.LogInformation("Database connection string created.");
 
-// Register the database context
+// Add services
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString, sqlOptions =>
     {
         sqlOptions.EnableRetryOnFailure();
     }));
 
-// Configure JWT Authentication
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -56,15 +75,27 @@ builder.Services.AddAuthentication(options =>
         ClockSkew = TimeSpan.Zero
     };
 });
+logger.LogInformation("JWT authentication configured.");
 
-// Configure Authorization with roles
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("Admin", policy => policy.RequireRole("Admin"));
     options.AddPolicy("User", policy => policy.RequireRole("User"));
 });
+logger.LogInformation("Authorization policies added.");
 
-// Add services to the container
+// Add CORS policy
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowSpecificOrigins", policy =>
+    {
+        policy.WithOrigins("https://example.com")
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+    });
+});
+logger.LogInformation("CORS policy configured.");
+
 builder.Services.AddControllers();
 builder.Services.AddScoped<IAuthService, AuthService>(provider =>
 {
@@ -72,25 +103,25 @@ builder.Services.AddScoped<IAuthService, AuthService>(provider =>
     return new AuthService(context, jwtSecretKey);
 });
 
-// Configure Swagger/OpenAPI
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(c =>
+builder.Services.AddSwaggerGen(options =>
 {
-    c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo { Title = "GAHT API", Version = "v1" });
+    options.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+    {
+        Title = "GAHT API",
+        Version = "v1"
+    });
 
-    // Add JWT Authentication scheme
-    c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+    options.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
     {
         Name = "Authorization",
         Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
         Scheme = "Bearer",
         BearerFormat = "JWT",
         In = Microsoft.OpenApi.Models.ParameterLocation.Header,
-        Description = "Enter 'Bearer' followed by your token in the text input below.\nExample: 'Bearer 12345abcdef'",
+        Description = "Enter 'Bearer' followed by your token in the text input below.\nExample: 'Bearer 12345abcdef'"
     });
 
-    // Add a global security requirement
-    c.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+    options.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
     {
         {
             new Microsoft.OpenApi.Models.OpenApiSecurityScheme
@@ -105,11 +136,10 @@ builder.Services.AddSwaggerGen(c =>
         }
     });
 });
+logger.LogInformation("Swagger/OpenAPI configured.");
 
-// Build the app
 var app = builder.Build();
 
-// Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -117,10 +147,27 @@ if (app.Environment.IsDevelopment())
     {
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "GAHT API V1");
     });
+    logger.LogInformation("Swagger UI enabled for development.");
+}
+else
+{
+    app.UseExceptionHandler("/error");
+    app.UseHsts();
+    logger.LogInformation("Exception handler and HSTS enabled for production.");
 }
 
 app.UseHttpsRedirection();
+app.UseCors("AllowSpecificOrigins");
+logger.LogInformation("CORS policy applied.");
+
 app.UseAuthentication();
+logger.LogInformation("Authentication middleware enabled.");
+
 app.UseAuthorization();
+logger.LogInformation("Authorization middleware enabled.");
+
 app.MapControllers();
+logger.LogInformation("Controllers mapped.");
+
+logger.LogInformation("Application running...");
 app.Run();
