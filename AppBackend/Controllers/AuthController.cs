@@ -66,12 +66,21 @@ namespace AppBackend.Controllers
                 return BadRequest(ModelState);
             }
 
+            // Explicit null checks to satisfy the compiler
+            if (request.Username is null || request.Password is null)
+            {
+                return BadRequest(new { message = "Username and password are required." });
+            }
+
             var token = await _authService.Authenticate(request.Username, request.Password);
-            if (token == null)
-                return Unauthorized(new { message = "Username or password is incorrect" });
+            if (string.IsNullOrEmpty(token))
+            {
+                return Unauthorized(new { message = "Username or password is incorrect." });
+            }
 
             return Ok(new { token });
         }
+
 
         // Register endpoint
         [HttpPost("register")]
@@ -80,6 +89,14 @@ namespace AppBackend.Controllers
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
+            }
+
+            // Explicit null checks for required fields
+            if (request.Username is null || request.Password is null || request.Role is null ||
+                request.Name is null || request.LastName is null || request.MothersMaidenName is null ||
+                request.Email is null || request.CellPhone is null)
+            {
+                return BadRequest(new { message = "All fields are required." });
             }
 
             // Pass all the fields to the AuthService's Register method
@@ -94,7 +111,9 @@ namespace AppBackend.Controllers
                 request.CellPhone);
 
             if (!result)
+            {
                 return BadRequest(new { message = "Registration failed. Username might already exist." });
+            }
 
             return Ok(new { message = "User registered successfully" });
         }

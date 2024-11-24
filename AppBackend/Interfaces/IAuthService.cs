@@ -6,13 +6,13 @@ namespace AppBackend.Interfaces
     {
         Task<string> Authenticate(string username, string password);
         Task<bool> Register(
-            string? username,
-            string? password,
-            string? role,
-            string? name,
-            string? lastName,
-            string? mothersMaidenName,
-            string? email,
-            string? cellPhone);
+            string username,
+            string password,
+            string role,
+            string name,
+            string lastName,
+            string mothersMaidenName,
+            string email,
+            string cellPhone);
     }
 }

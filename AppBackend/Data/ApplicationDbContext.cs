@@ -11,9 +11,9 @@ namespace AppBackend.Data
         }
 
         // Define DbSets for your tables
-        public DbSet<User> Users { get; set; }
-        public DbSet<UserRole> UserRoles { get; set; }  // Add UserRoles DbSet
-        public DbSet<CatRole> CatRoles { get; set; }    // Add CatRoles DbSet
+        public DbSet<User> Users { get; set; } = null!;
+        public DbSet<UserRole> UserRoles { get; set; } = null!;
+        public DbSet<CatRole> CatRoles { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
