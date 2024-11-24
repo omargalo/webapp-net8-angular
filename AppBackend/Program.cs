@@ -151,7 +151,7 @@ if (app.Environment.IsDevelopment())
 }
 else
 {
-    app.UseExceptionHandler("/error");
+    app.UseExceptionHandler();
     app.UseHsts();
     logger.LogInformation("Exception handler and HSTS enabled for production.");
 }
