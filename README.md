@@ -1,11 +1,11 @@
 
-# WebApp Base .NET 8 + Angular 18
+# WebApp Base .NET 8 + Angular 19
 
 This repository serves as a starter template for building modern, full-stack web applications using **.NET 8** as the backend and **Angular 18** for the frontend. The project is designed to integrate seamlessly, enabling developers to focus on building features rather than configuring environments.
 
 ## Features
 - **Backend**: Powered by .NET 8 with RESTful APIs, JWT authentication, and a scalable architecture.
-- **Frontend**: Developed with Angular 18 for a responsive and dynamic user interface.
+- **Frontend**: Developed with Angular 19 for a responsive and dynamic user interface.
 - **Database**: Configured to work with SQL Server, using Entity Framework Core for ORM.
 - **Authentication**: JWT-based user authentication for secure API communication.
 - **Swagger Integration**: Interactive API documentation out of the box.
@@ -19,7 +19,6 @@ Before setting up the project, ensure you have the following installed:
 - **Node.js (v18 or later)**: [Download](https://nodejs.org)
 - **Angular CLI**: Install via `npm install -g @angular/cli`
 - **SQL Server**: [Download](https://www.microsoft.com/en-us/sql-server/sql-server-downloads)
-- **Git**: [Download](https://git-scm.com/)
 
 ---
 
@@ -40,11 +39,11 @@ Before setting up the project, ensure you have the following installed:
 
 3. Configure environment variables:
    - Create an `appsettings.json` file or set environment variables for:
-     - `GAHT_SQL_HOST`
-     - `GAHT_SQL_DB`
-     - `GAHT_SQL_USER`
-     - `GAHT_SQL_PASSWORD`
-     - `GAHT_JWT_SECRET_KEY`
+     - `PROJECT_SQL_HOST`
+     - `PROJECT_SQL_DB`
+     - `PROJECT_SQL_USER`
+     - `PROJECT_SQL_PASSWORD`
+     - `PROJECT_JWT_SECRET_KEY`
 
 4. Run database migrations:
    ```bash
@@ -58,7 +57,7 @@ Before setting up the project, ensure you have the following installed:
 
 6. Visit Swagger documentation at `https://localhost:<port>/swagger`.
 
-### Frontend (Angular 18)
+### Frontend (Angular 19)
 1. Navigate to the frontend folder (e.g., `src/Frontend`):
    ```bash
    cd src/Frontend
@@ -83,7 +82,7 @@ Before setting up the project, ensure you have the following installed:
 webapp-net8-angular18/
 ├── src/
 │   ├── Backend/        # .NET 8 backend API
-│   └── Frontend/       # Angular 18 frontend application
+│   └── Frontend/       # Angular 19 frontend application
 ├── README.md           # Project documentation
 ├── LICENSE             # License details
 └── .gitignore          # Git ignore file
